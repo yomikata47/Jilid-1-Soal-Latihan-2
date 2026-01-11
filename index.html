@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Halaman 35 — Ujian Akhir Jilid</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP&display=swap" rel="stylesheet">
+
+<style>
+body{
+  background:#f6f8fb;
+  font-family:Arial,sans-serif;
+}
+.container{
+  max-width:640px;
+  margin:20px auto;
+  background:#fff;
+  padding:20px;
+  border-radius:16px;
+  box-shadow:0 8px 20px rgba(0,0,0,.08);
+}
+h1{text-align:center}
+
+.question{
+  background:#fafafa;
+  padding:14px;
+  border-radius:12px;
+  margin-bottom:14px;
+}
+
+.sound{
+  font-size:28px;
+  text-align:center;
+  margin-bottom:12px;
+  font-weight:bold;
+}
+
+.kana{
+  font-family:"Noto Serif JP","Yu Mincho",serif;
+  font-size:34px;
+}
+
+.options{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+}
+
+button{
+  padding:10px;
+  border-radius:10px;
+  border:2px solid #ddd;
+  background:#fff;
+  cursor:pointer;
+}
+
+button.correct{background:#4caf50;color:#fff}
+button.wrong{background:#f44336;color:#fff}
+button:disabled{opacity:.9}
+
+#scoreBox{
+  margin-top:20px;
+  padding:14px;
+  background:#eef2f7;
+  border-radius:12px;
+  display:flex;
+  justify-content:space-between;
+  font-weight:bold;
+}
+
+/* POPUP */
+#popup{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.5);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:999;
+}
+.popup-content{
+  background:#fff;
+  padding:20px;
+  border-radius:14px;
+  max-width:340px;
+  text-align:center;
+}
+.popup-content button{
+  width:100%;
+  margin-top:10px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+<h1>Ujian Akhir Jilid<br>Blok 1–6</h1>
+
+<div id="quiz"></div>
+
+<div id="scoreBox">
+  <div>Benar: <span id="benar">0</span></div>
+  <div>Salah: <span id="salah">0</span> / 5</div>
+</div>
+</div>
+
+<div id="popup">
+  <div class="popup-content" id="popupContent"></div>
+</div>
+
+<script>
+/* ================== DATA KANA ================== */
+const kana = [
+  {h:"あ",k:"ア",r:"a"},{h:"い",k:"イ",r:"i"},{h:"う",k:"ウ",r:"u"},{h:"え",k:"エ",r:"e"},{h:"お",k:"オ",r:"o"},
+  {h:"か",k:"カ",r:"ka"},{h:"き",k:"キ",r:"ki"},{h:"く",k:"ク",r:"ku"},{h:"け",k:"ケ",r:"ke"},{h:"こ",k:"コ",r:"ko"},
+  {h:"さ",k:"サ",r:"sa"},{h:"し",k:"シ",r:"shi"},{h:"す",k:"ス",r:"su"},{h:"せ",k:"セ",r:"se"},{h:"そ",k:"ソ",r:"so"},
+  {h:"た",k:"タ",r:"ta"},{h:"ち",k:"チ",r:"chi"},{h:"つ",k:"ツ",r:"tsu"},{h:"て",k:"テ",r:"te"},{h:"と",k:"ト",r:"to"},
+  {h:"な",k:"ナ",r:"na"},{h:"に",k:"ニ",r:"ni"},{h:"ぬ",k:"ヌ",r:"nu"},{h:"ね",k:"ネ",r:"ne"},{h:"の",k:"ノ",r:"no"},
+  {h:"は",k:"ハ",r:"ha"},{h:"ひ",k:"ヒ",r:"hi"},{h:"ふ",k:"フ",r:"fu"},{h:"へ",k:"ヘ",r:"he"},{h:"ほ",k:"ホ",r:"ho"}
+];
+
+function shuffle(a){
+  for(let i=a.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+  return a;
+}
+
+/* ================== STATE ================== */
+let benar=0, salah=0, answered=0;
+const benarEl=document.getElementById("benar");
+const salahEl=document.getElementById("salah");
+
+/* ================== POPUP ================== */
+const popup=document.getElementById("popup");
+const popupContent=document.getElementById("popupContent");
+
+function showPopup(html){
+  popupContent.innerHTML=html;
+  popup.style.display="flex";
+}
+
+/* ================== SOAL ================== */
+const quiz=document.getElementById("quiz");
+let soal=[];
+
+/* 1–10 (1 huruf) */
+for(let i=0;i<10;i++){
+  const k= kana[Math.floor(Math.random()*kana.length)];
+  const useH=Math.random()>0.5;
+  soal.push({
+    q:k.r,
+    a:useH?k.h:k.k,
+    opts:shuffle([
+      useH?k.h:k.k,
+      ...(shuffle(kana).filter(x=>x!==k).slice(0,3).map(x=>useH?x.h:x.k))
+    ])
+  });
+}
+
+/* 11–15 (2 huruf) */
+for(let i=0;i<5;i++){
+  const pair=shuffle([...kana]).slice(0,2);
+  const useH=Math.random()>0.5;
+  soal.push({
+    q:pair.map(x=>x.r).join(" "),
+    a:pair.map(x=>useH?x.h:x.k).join(" "),
+    opts:shuffle([
+      pair.map(x=>useH?x.h:x.k).join(" "),
+      shuffle([...kana]).slice(0,2).map(x=>useH?x.h:x.k).join(" "),
+      shuffle([...kana]).slice(0,2).map(x=>useH?x.h:x.k).join(" "),
+      shuffle([...kana]).slice(0,2).map(x=>useH?x.h:x.k).join(" ")
+    ])
+  });
+}
+
+/* 16–20 (3 huruf) */
+for(let i=0;i<5;i++){
+  const trio=shuffle([...kana]).slice(0,3);
+  const useH=Math.random()>0.5;
+  soal.push({
+    q:trio.map(x=>x.r).join(" "),
+    a:trio.map(x=>useH?x.h:x.k).join(" "),
+    opts:shuffle([
+      trio.map(x=>useH?x.h:x.k).join(" "),
+      shuffle([...kana]).slice(0,3).map(x=>useH?x.h:x.k).join(" "),
+      shuffle([...kana]).slice(0,3).map(x=>useH?x.h:x.k).join(" "),
+      shuffle([...kana]).slice(0,3).map(x=>useH?x.h:x.k).join(" ")
+    ])
+  });
+}
+
+/* ================== RENDER ================== */
+soal.forEach(s=>{
+  const d=document.createElement("div");
+  d.className="question";
+  d.innerHTML=`
+    <div class="sound">${s.q}</div>
+    <div class="options">
+      ${s.opts.map(o=>`<button class="kana">${o}</button>`).join("")}
+    </div>`;
+  
+  d.querySelectorAll("button").forEach(b=>{
+    b.onclick=()=>{
+      if(b.disabled)return;
+      d.querySelectorAll("button").forEach(x=>x.disabled=true);
+      answered++;
+
+      if(b.textContent===s.a){
+        b.classList.add("correct"); benar++;
+      }else{
+        b.classList.add("wrong"); salah++;
+      }
+
+      benarEl.textContent=benar;
+      salahEl.textContent=salah;
+
+      if(salah>5){
+        showPopup(`
+          <h2>Perlu Istirahat Sejenak! </h2>
+          <p>Kesalahan melebihi batas KKM 🥲</p>
+  <p>
+      Disarankan untuk mengulang latihan pada halaman 31–33
+      atau mengulangi blok huruf yang masih belum dikuasai.
+    </p>
+        `);
+      }else if(answered===20){
+        showPopup(`
+          <h2>🎉 Selamat! 🎉</h2>
+          <p>Kamu berhasil melewati ujian ini dengan baik! 🥳</p>
+          <p>Sebagian huruf-huruf Hiragana dan Katakana yang dulu terasa asing, sekarang sudah bisa kamu baca. 
+Itu pencapaian besar, lho! 👏 Kamu sudah menunjukkan bahwa kamu tidak mudah menyerah dan mau terus mencoba.</p>
+<p> 🌟 Ingat, ya! Orang hebat bukan yang tidak pernah salah, tapi <b> yang terus belajar dari kesalahan. </b> </p>
+<p> Sekarang waktunya melangkah ke blok selanjutnya.
+Kamu siap? 💪📚 </p>
+
+        `);
+      }
+    };
+  });
+
+  quiz.appendChild(d);
+});
+</script>
+
+</body>
+</html>
